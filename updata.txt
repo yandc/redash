@@ -1,0 +1,10 @@
+2021.06.29:
+直接部署：
+1. 准备python3环境，安装依赖 pip install -r requirements.txt
+2. migrate:  ./manage db upgrade
+3. 配置PostgreSQL和redis地址
+4. 启动服务(server, rq worker, rq scheduler)
+docker部署：
+1. 准备docker环境docker-compose up -d
+2. docker-compose.yml中配置PostgreSQL(REDASH_DATABASE_URL)和redis(REDASH_REDIS_URL)
+3. 启动服务docker-compose up -d

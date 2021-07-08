@@ -20,6 +20,7 @@ from redash.utils import generate_token, utcnow, dt_from_timestamp
 from .base import db, Column, GFKBase, key_type, primary_key
 from .mixins import TimestampMixin, BelongsToOrgMixin
 from .types import json_cast_property, MutableDict, MutableList
+from sql_metadata import Parser
 
 logger = logging.getLogger(__name__)
 
@@ -254,7 +255,35 @@ class User(
         ).hexdigest()
         return "{0}-{1}".format(self.id, identity)
 
+    def has_query_permission(self, query, data_source, permission):
+        if "admin" in self.permissions:
+            return True
+            
+        query_permission = data_source.groups_query_permission
+        matching_groups = set(query_permission.keys()).intersection(self.group_ids)
+        if not matching_groups:
+            return False
+            
+        query_tables = set([x.lower() for x in Parser(query).tables])
+        
+        #check table permission
+        for group_id in matching_groups:
+            perm_dict = query_permission[group_id]
+            if not perm_dict:
+                continue
+            has_perm = True
 
+            for table in query_tables:
+                if table not in perm_dict or \
+                   perm_dict[table] == 'no_permission' or \
+                   perm_dict[table] == 'view_only' and permission != 'view_query':
+                    has_perm = False
+                    break
+                    
+            if has_perm: # 只要一个group有权限就可以执行
+                return True
+        return False
+                                                                                                                                                                                                                                                
 @generic_repr("id", "name", "type", "org_id")
 class Group(db.Model, BelongsToOrgMixin):
     DEFAULT_PERMISSIONS = [

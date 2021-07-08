@@ -197,6 +197,8 @@ class QueryResultListResource(BaseResource):
 
         if not has_access(data_source, self.current_user, not_view_only):
             return error_messages["no_permission"]
+        if not self.current_user.has_query_permission(query, data_source, 'execute_query'):
+            return error_messages["no_permission"]
 
         return run_query(
             parameterized_query,
@@ -295,6 +297,8 @@ class QueryResultResource(BaseResource):
         query = get_object_or_404(
             models.Query.get_by_id_and_org, query_id, self.current_org
         )
+        if not self.current_user.has_query_permission(query.query_text, query.data_source, 'execute_query'):
+            return error_messages["no_permission"]
 
         allow_executing_with_view_only_permissions = query.parameterized.is_safe
         should_apply_auto_limit = params.get("apply_auto_limit", False)
@@ -357,6 +361,8 @@ class QueryResultResource(BaseResource):
             query = get_object_or_404(
                 models.Query.get_by_id_and_org, query_id, self.current_org
             )
+            if not self.current_user.has_query_permission(query.query_text, query.data_source, 'view_query'):
+                abort(404, 'no permission')
 
             if (
                 query_result is None

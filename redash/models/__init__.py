@@ -248,11 +248,17 @@ class DataSource(BelongsToOrgMixin, db.Model):
         ).delete()
         db.session.commit()
 
-    def update_group_permission(self, group, view_only):
+    def update_group_permission(self, group, view_only, table_name, table_permission):
         dsg = DataSourceGroup.query.filter(
             DataSourceGroup.group == group, DataSourceGroup.data_source == self
         ).one()
-        dsg.view_only = view_only
+        if table_name and table_permission:
+            if not dsg.query_permission:
+                dsg.query_permission = {}
+            for name in table_name.split(','):
+                dsg.query_permission[name] = table_permission
+        else:
+            dsg.view_only = view_only
         db.session.add(dsg)
         return dsg
 
@@ -278,7 +284,12 @@ class DataSource(BelongsToOrgMixin, db.Model):
     def groups(self):
         groups = DataSourceGroup.query.filter(DataSourceGroup.data_source == self)
         return dict([(group.group_id, group.view_only) for group in groups])
-
+        
+    @property
+    def groups_query_permission(self):
+        groups = DataSourceGroup.query.filter(DataSourceGroup.data_source == self)
+        return dict([(group.group_id, group.query_permission) for group in groups])
+        
 
 @generic_repr("id", "data_source_id", "group_id", "view_only")
 class DataSourceGroup(db.Model):
@@ -289,6 +300,7 @@ class DataSourceGroup(db.Model):
     group_id = Column(key_type("Group"), db.ForeignKey("groups.id"))
     group = db.relationship(Group, back_populates="data_sources")
     view_only = Column(db.Boolean, default=False)
+    query_permission = Column(MutableDict.as_mutable(PseudoJSON), nullable=True)
 
     __tablename__ = "data_source_groups"
 

@@ -255,6 +255,10 @@ class QueryListResource(BaseQueryListResource):
         query_def["data_source"] = data_source
         query_def["org"] = self.current_org
         query_def["is_draft"] = True
+
+        if not self.current_user.has_query_permission(query_def['query_text'], data_source, 'execute_query'):
+            abort(403)
+            
         query = models.Query.create(**query_def)
         models.db.session.add(query)
         models.db.session.commit()
@@ -362,6 +366,8 @@ class QueryResource(BaseResource):
 
         if "query" in query_def:
             query_def["query_text"] = query_def.pop("query")
+            if not self.current_user.has_query_permission(query_def['query_text'], query.data_source, 'execute_query'):
+                abort(403)        
 
         if "tags" in query_def:
             query_def["tags"] = [tag for tag in query_def["tags"] if tag]
@@ -462,6 +468,9 @@ class QueryForkResource(BaseResource):
             models.Query.get_by_id_and_org, query_id, self.current_org
         )
         require_access(query.data_source, self.current_user, not_view_only)
+        if not self.current_user.has_query_permission(query.query_text, query.data_source, 'execute_query'):
+            abort(403)
+            
         forked_query = query.fork(self.current_user)
         models.db.session.commit()
 
@@ -491,7 +500,9 @@ class QueryRefreshResource(BaseResource):
             models.Query.get_by_id_and_org, query_id, self.current_org
         )
         require_access(query, self.current_user, not_view_only)
-
+        if not self.current_user.has_query_permission(query.query_text, query.data_source, 'execute_query'):
+            abort(403)
+            
         parameter_values = collect_parameters_from_request(request.args)
         parameterized_query = ParameterizedQuery(query.query_text, org=self.current_org)
         should_apply_auto_limit = query.options.get("apply_auto_limit", False)

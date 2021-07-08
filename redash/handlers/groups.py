@@ -179,14 +179,26 @@ class GroupDataSourceListResource(BaseResource):
 
 class GroupDataSourceResource(BaseResource):
     @require_admin
+    def get(self, group_id, data_source_id):
+        dsg = models.DataSourceGroup.query.filter(
+            models.DataSourceGroup.group_id==group_id,
+            models.DataSourceGroup.data_source_id==data_source_id).one()
+        return dsg.query_permission or {}
+    
+    @require_admin
     def post(self, group_id, data_source_id):
         data_source = models.DataSource.get_by_id_and_org(
             data_source_id, self.current_org
         )
         group = models.Group.get_by_id_and_org(group_id, self.current_org)
-        view_only = request.json["view_only"]
+        view_only = request.json.get("view_only", True)
+        table_name = request.json.get("table_name", "")
+        table_permission = request.json.get("table_permission", "")
+        if table_permission and \
+           table_permission not in ('no_permission', 'view_only', 'full_access'):
+            abort(400, message="Table permission error.")
 
-        data_source_group = data_source.update_group_permission(group, view_only)
+        data_source_group = data_source.update_group_permission(group, view_only, table_name, table_permission)
         models.db.session.commit()
 
         self.record_event(
