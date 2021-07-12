@@ -3,6 +3,7 @@
 1. 准备python3环境，安装依赖 pip install -r requirements.txt
 2. setup-env.sh中配置PostgreSQL和redis地址, 并激活: source setup-env.sh
 3. migrate:  ./manage db upgrade
+4. 解压静态文件: cd client && tar -zxvf dist.tar.gz
 4. 启动服务(server, rq worker, rq scheduler):
    1) server: 参考gunicorn -b 0.0.0.0:5000 --name redash -w 4 redash.wsgi:app
    2) rq worker: supervisor启动，配置在./worker.conf

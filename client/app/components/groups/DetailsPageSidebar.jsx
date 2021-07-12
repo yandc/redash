@@ -16,7 +16,9 @@ export default function DetailsPageSidebar({
   canAddMembers,
   onAddMembersClick,
   canAddDataSources,
+  canAddTables,
   onAddDataSourcesClick,
+  onAddTablesClick,
   onGroupDeleted,
 }) {
   const canRemove = group && currentUser.isAdmin && group.type !== "builtin";
@@ -34,6 +36,12 @@ export default function DetailsPageSidebar({
         <Button className="w-100 m-t-5" type="primary" onClick={onAddDataSourcesClick}>
           <i className="fa fa-plus m-r-5" aria-hidden="true" />
           Add Data Sources
+        </Button>
+      )}
+      {canAddTables && (
+        <Button className="w-100 m-t-5" type="primary" onClick={onAddTablesClick}>
+          <i className="fa fa-plus m-r-5" aria-hidden="true" />
+          Add Tables
         </Button>
       )}
       {canRemove && (

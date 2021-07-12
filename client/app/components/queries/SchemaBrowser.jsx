@@ -168,8 +168,7 @@ export function SchemaList({ loading, schema, expandedFlags, onTableExpand, onIt
 }
 
 export function applyFilterOnSchema(schema, filterString) {
-  const filters = filter(filterString.toLowerCase().split(/\s+/), s => s.length > 0);
-
+  const filters = filter(filterString.toLowerCase().split(/\s+/), s => s.length > 0); 
   // Empty string: return original schema
   if (filters.length === 0) {
     return schema;
