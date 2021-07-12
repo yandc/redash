@@ -362,7 +362,7 @@ class QueryResultResource(BaseResource):
                 models.Query.get_by_id_and_org, query_id, self.current_org
             )
             if not self.current_user.has_query_permission(query.query_text, query.data_source, 'view_query'):
-                abort(404, 'no permission')
+                return error_messages["no_permission"]
 
             if (
                 query_result is None

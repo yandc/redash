@@ -74,10 +74,10 @@ def test_connection(data_source_id):
 
 
 @job("schemas", queue_class=Queue, at_front=True, timeout=300, ttl=90)
-def get_schema(data_source_id, refresh):
+def get_schema(data_source_id, refresh, user_id):
     try:
         data_source = models.DataSource.get_by_id(data_source_id)
-        return data_source.get_schema(refresh)
+        return data_source.get_schema(refresh, user_id)
     except NotSupported:
         return {
             "error": {

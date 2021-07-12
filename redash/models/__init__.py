@@ -184,19 +184,38 @@ class DataSource(BelongsToOrgMixin, db.Model):
 
         return res
 
-    def get_cached_schema(self):
+    def filter_user_schema(self, user_id, schemas):
+        if not user_id:
+            return schemas
+        user = users.User.query.get(user_id)
+        if not user.has_permission('admin'):
+            permit_schemas = []
+            query_permission = self.groups_query_permission
+            matching_groups = set(query_permission.keys()).intersection(user.group_ids)
+            permit_tables = set([])
+            for group_id in matching_groups:
+                for table, perm in query_permission[group_id].items():
+                    if perm != 'no_permission':
+                        permit_tables.add(table)
+            for schema in schemas:
+                if schema['name'] in permit_tables:
+                    permit_schemas.append(schema)
+            return permit_schemas
+        return schemas
+                
+    def get_cached_schema(self, user_id=0):
         cache = redis_connection.get(self._schema_key)
-        return json_loads(cache) if cache else None
+        schemas = json_loads(cache) if cache else None
+        return self.filter_user_schema(user_id, schemas)
 
-    def get_schema(self, refresh=False):
+    def get_schema(self, refresh=False, user_id=0):
         out_schema = None
         if not refresh:
-            out_schema = self.get_cached_schema()
+            out_schema = self.get_cached_schema(user_id)
 
         if out_schema is None:
             query_runner = self.query_runner
-            schema = query_runner.get_schema(get_stats=refresh)
-
+            schema = self.filter_user_schema(user_id, query_runner.get_schema(get_stats=refresh))
             try:
                 out_schema = self._sort_schema(schema)
             except Exception:

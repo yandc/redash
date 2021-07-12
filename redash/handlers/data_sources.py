@@ -198,12 +198,12 @@ class DataSourceSchemaResource(BaseResource):
         refresh = request.args.get("refresh") is not None
 
         if not refresh:
-            cached_schema = data_source.get_cached_schema()
+            cached_schema = data_source.get_cached_schema(self.current_user.id)
 
             if cached_schema is not None:
                 return {"schema": cached_schema}
 
-        job = get_schema.delay(data_source.id, refresh)
+        job = get_schema.delay(data_source.id, refresh, self.current_user.id)
 
         return serialize_job(job)
 
